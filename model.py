@@ -3,6 +3,9 @@ from torch import nn
 import torch.nn.functional as F
 # from torchviz import make_dot
 
+from torch import Tensor
+from typing import List, Optional
+
 def Conv2d_default(in_channels, out_channels, kernel_size):
     # default 2d convolution padding to output same size as input, [odd kernel size]
     return nn.Conv2d(in_channels, out_channels , kernel_size, stride=1, padding=kernel_size//2, dilation=1)
@@ -122,13 +125,14 @@ class UNet(nn.Module):
         n_slices: int,
         n_ang: int = 25
     ) -> None:
+
         super().__init__()
         self.n_slices = n_slices
         self.n_ang = n_ang
 
         self.use_bn = False
-        self.use_maxpool = False
-        self.use_upsample = False
+        self.use_maxpool = True
+        self.use_upsample = True
         self.use_dropout = False
 
         self.channels_encoder = [64, 128, 256, 256, 512]
@@ -145,7 +149,7 @@ class UNet(nn.Module):
         self.decoderblock4 = DecoderBlock(self.channels_encoder[1]+self.channels_encoder[1], self.channels_encoder[0], use_act=True, use_bn=self.use_bn, use_upsample=self.use_upsample, use_dropout=False)
         self.decoderblock5 = DecoderBlock(self.channels_encoder[0]+self.channels_encoder[0], self.n_slices, use_act=True, use_bn=False, use_upsample=self.use_upsample, use_dropout=False)
     
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
          
         x1 = self.encoderblock1(x)
 
@@ -173,8 +177,6 @@ class UNet(nn.Module):
 
         x = torch.cat([x1, x], dim=1)
         x = self.decoderblock5(x)
-
-        print(x.size())
 
         return x
    

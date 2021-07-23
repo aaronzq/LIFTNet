@@ -1,22 +1,31 @@
+from typing import List
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 from utils import *
 from os.path import splitext
 from os import listdir
-
+from typing import List
 
 from torch.utils.data import DataLoader, random_split
 
-class vcdDataset(Dataset):
-    def __init__(self, lf_dir, gt_dir, image_size=[176, 176], n_slices=51, n_num=11, fmt='.tif', preload=False):
+class liftDataset(Dataset):
+    def __init__(
+        self, 
+        lf_dir: str, 
+        gt_dir: str, 
+        image_size: List = [256, 256],
+        n_slices: int =21,
+        n_ang: int =25,
+        fmt: str = '.tif',
+        preload: bool = False
+    ) -> None:
+                
         self.lf_dir = lf_dir
         self.gt_dir = gt_dir
         self.image_size = image_size
         self.n_slices = n_slices
-        self.n_num = n_num
-        self.n_channels_lf = n_num * n_num
-        self.view_size = [image_size[0]//n_num, image_size[1]//n_num]
+        self.n_ang = n_ang
         self.fmt = fmt
         self.preload = preload
         self.lfs = None
@@ -27,17 +36,16 @@ class vcdDataset(Dataset):
         self.gt_ids = [splitext(file)[0] for file in listdir(gt_dir) 
                         if not file.startswith('.') and splitext(file)[1] == fmt]
 
-        assert image_size[0]%n_num==0 and image_size[1]%n_num==0, "light field 2D images size and n number are mismatched"
-        assert self.lf_ids == self.gt_ids, "Light field and Ground truth images are mismatched"
+        # assert self.lf_ids == self.gt_ids, "LIFT and Ground truth images are mismatched"
 
 
         if preload:
-            self.lfs = np.zeros([len(self.lf_ids), n_num*n_num, image_size[0]//n_num, image_size[1]//n_num])
-            self.gts = np.zeros([len(self.gt_ids), n_slices, image_size[0], image_size[1]])
+            self.lfs = np.zeros([len(self.lf_ids), self.n_ang, image_size[0], image_size[1]])
+            self.gts = np.zeros([len(self.gt_ids), self.n_slices, image_size[0], image_size[1]])
             for idx in range(len(self.lf_ids)):
-                lf = get_lf_views(self.lf_ids[idx]+self.fmt, self.lf_dir, normalize_fn=normalize_1, n_num=self.n_num)
+                lf = get_img3d_fn(self.lf_ids[idx]+self.fmt, self.lf_dir, normalize_fn=normalize_1)
                 gt = get_img3d_fn(self.gt_ids[idx]+self.fmt, self.gt_dir, normalize_fn=normalize_1)                
-                assert lf.shape == (self.n_channels_lf, *self.view_size) , "light field 2D images size wrong"
+                assert lf.shape == (self.n_ang, *self.image_size) , "Lift images size wrong"
                 assert gt.shape == (self.n_slices, *self.image_size) , "Ground truth 3D images size wrong"
                 self.lfs[idx, :, :, :] = lf
                 self.gts[idx, :, :, :] = gt
@@ -58,27 +66,28 @@ class vcdDataset(Dataset):
         
         else:
 
-            lf = get_lf_views(self.lf_ids[i]+self.fmt, self.lf_dir, normalize_fn=normalize_1, n_num=self.n_num)
+            lf = get_img3d_fn(self.lf_ids[i]+self.fmt, self.lf_dir, normalize_fn=normalize_1)
             gt = get_img3d_fn(self.gt_ids[i]+self.fmt, self.gt_dir, normalize_fn=normalize_1)            
-            assert lf.shape == (self.n_channels_lf, *self.view_size) , "light field 2D images size wrong"
+            assert lf.shape == (self.n_ang, *self.image_size) , "Lift 3D images size wrong"
             assert gt.shape == (self.n_slices, *self.image_size) , "Ground truth 3D images size wrong"
             return {'lf': torch.from_numpy(lf).to(torch.float32), 'gt': torch.from_numpy(gt).to(torch.float32)}
 
 
 if __name__ == '__main__':
 
-    lf_dir = './data/lftest/LF/'
-    gt_dir = './data/lftest/WF/'
+    lf_dir = './data/lf/'
+    gt_dir = './data/gt/'
 
-    dataset = vcdDataset(lf_dir, gt_dir, n_slices=61)
+    dataset = liftDataset(lf_dir, gt_dir, image_size=[256,256], n_slices=21, n_ang=25)
     print(type(dataset))
     print(dataset.lf_ids, dataset.gt_ids)
     print(len(dataset))
 
 
-    train_dataset, val_dataset = random_split(dataset, [1, 1])
+    train_dataset, val_dataset = random_split(dataset, [18, 2])
 
     a=1
+
     # dataloader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=False)
     
     # print(len(dataloader))

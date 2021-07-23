@@ -4,8 +4,8 @@ import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader, random_split
 
-from model import VCDNet
-from dataset import vcdDataset
+from model import UNet
+from dataset import liftDataset
 from utils import *
 from os import listdir
 import time
@@ -20,14 +20,14 @@ def train(config, begin_epoch=0):
     device = torch.device("cuda:{}".format(config.train.device) if torch.cuda.is_available() else "cpu")
     print("Training on {}".format(device))
     
-    net = VCDNet(config.n_num, config.n_slices, config.train.img_size).to(device) 
+    net = UNet(config.n_slices , config.n_ang).to(device) 
     
-    # criterion = nn.MSELoss()
-    criterion = nn.L1Loss()
+    criterion = nn.MSELoss()
+    # criterion = nn.L1Loss()
     optimizer = optim.Adam(net.parameters(), lr=config.train.lr_init, betas=(config.train.beta1, 0.999))
     scheduler = optim.lr_scheduler.StepLR(optimizer, config.train.decay_every, config.train.lr_decay)
 
-    dataset = vcdDataset(config.train.lf2d_path, config.train.target3d_path, config.train.img_size, config.n_slices, config.n_num, fmt='.tif', preload=config.dataset_preload)
+    dataset = liftDataset(config.train.lf3d_path, config.train.target3d_path, config.train.img_size, config.n_slices, config.n_ang, fmt='.tif', preload=config.dataset_preload)
     n_val = config.train.n_val
     n_train = len(dataset) - n_val
     
@@ -87,7 +87,7 @@ def train(config, begin_epoch=0):
                 running_loss += loss.item()
                 if epoch == begin_epoch:
                     save_img3d('gt_{}.tif'.format(idx), config.train.valid_saving_path, gt_batch, bitdepth=16)
-                    save_img3d('lf_views_{}.tif'.format(idx), config.train.valid_saving_path, lf_batch, bitdepth=16)
+                    save_img3d('lf_{}.tif'.format(idx), config.train.valid_saving_path, lf_batch, bitdepth=16)
                 elif (epoch%config.train.ckpt_saving_interval == 0):
                     save_img3d('val_epoch{}_{}.tif'.format(epoch, idx), config.train.valid_saving_path, pred, bitdepth=16)                
         running_loss = running_loss / len(val_loader)
@@ -109,13 +109,13 @@ def train(config, begin_epoch=0):
 
 if __name__ == '__main__':
 
-    config = Config(label = 'rbcDSRED_[m76-76]_step2um_N11_bgsub_20210112_bs1_netv5_s1s2_trans_cstr2_cust12_linear_l1loss', n_num=11, n_slices=77)
-    config.train.target3d_path = 'data/train/rbcDSRED_[m76-76]_step2um_N11_bgsub_20210112/WF/'
-    config.train.lf2d_path = 'data/train/rbcDSRED_[m76-76]_step2um_N11_bgsub_20210112/LF/'
+    config = Config(label = 'simulated_beads_25_21', n_ang=25, n_slices=21)
+    config.train.target3d_path = 'data/train/gt/'
+    config.train.lf3d_path = 'data/train/lf/'
     config.train.n_epoch = 50
     config.train.ckpt_saving_interval = 2
-    config.train.decay_every = 20
-    config.train.n_val = 5
+    config.train.decay_every = 40
+    config.train.n_val = 2
     config.train.batch_size = 1
     config.train.lr_init = 1e-4
     config.show_basic_paras()

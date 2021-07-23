@@ -26,8 +26,8 @@ def get_img3d_fn(filename, filepath, normalize_fn):
 
 def get_lf_views(filename, filepath, normalize_fn, n_num=11, padding=False):
 
-    lf2d = get_img2d_fn(filename, filepath, normalize_fn)  # channel(1) height width
-    return lf_views_fn(lf2d, n_num, padding) # channel(n_num*n_num) height width
+    lf3d = get_img2d_fn(filename, filepath, normalize_fn)  # channel(1) height width
+    return lf_views_fn(lf3d, n_num, padding) # channel(n_num*n_num) height width
 
 def normalize_1(x, bitdepth=16):
     assert bitdepth==8 or bitdepth==16, "Only supports 8bit and 16bit image"
@@ -40,23 +40,23 @@ def normalize_2(x, bitdepth=16):
     x = x - 1
     return x
 
-def lf_views_fn(lf2d, n_num=11, padding=False):
+def lf_views_fn(lf3d, n_num=11, padding=False):
 
     n = n_num
-    c, h, w = lf2d.shape # channel(1) height width
+    c, h, w = lf3d.shape # channel(1) height width
     if padding:
         lf_views = np.zeros([n*n, h, w])
         d = 0
         for i in range(n):
             for j in range(n):
-                lf_views[d, i:h:n, j:w:n] = lf2d[0, i:h:n, j:w:n]
+                lf_views[d, i:h:n, j:w:n] = lf3d[0, i:h:n, j:w:n]
                 d = d + 1
     else:
         lf_views = np.zeros([n*n, int(h/n), int(w/n)])
         d = 0
         for i in range(n):
             for j in range(n):
-                lf_views[d, :, :] = lf2d[0, i:h:n, j:w:n]
+                lf_views[d, :, :] = lf3d[0, i:h:n, j:w:n]
                 d = d + 1
     return lf_views
 
@@ -119,36 +119,36 @@ def exists_or_mkdir(dir):
 
 
 class Config():
-    def __init__(self, label='vcdnet_test', n_num=11, n_slices=61):
+    def __init__(self, label='liftnet_test', n_ang=25, n_slices=21):
         self.label = label 
-        self.n_num = n_num
+        self.n_ang = n_ang
         self.n_slices = n_slices
         self.train = edict()
         self.test = edict()
 
-        self.train.img_size = [176, 176]
+        self.train.img_size = [256, 256]
         self.train.batch_size = 1
         
         self.train.lr_init = 1e-4
         self.train.beta1 = 0.9
         self.train.lr_decay = 0.1
 
-        self.train.n_val = 10        
-        self.train.n_epoch = 300
+        self.train.n_val = 2        
+        self.train.n_epoch = 50
         self.train.decay_every = 30
         self.train.ckpt_saving_interval = 10
 
         self.train.valid_saving_path = "sample/valid/{}/".format(label)
         self.train.ckpt_saving_path = "checkpoint/{}/".format(label)
-        self.train.target3d_path = 'data/train/vcdnet_test/WF/'
-        self.train.lf2d_path = 'data/train/vcdnet_test/LF/'
+        self.train.target3d_path = 'data/train/gt/'
+        self.train.lf3d_path = 'data/train/lf/'
 
         self.dataset_preload = True
         self.train.device = 0
 
         self.test.ckpt_loading_path = "checkpoint/{}/".format(label)
         self.test.img_size = [330, 330]
-        self.test.lf2d_path = 'data/test/'
+        self.test.lf3d_path = 'data/test/'
         self.test.saving_path = 'data/test/{}/'.format(label)
 
         self.test.device = 0
@@ -157,12 +157,12 @@ class Config():
         self.label = new_label
         self.train.valid_saving_path = "sample/valid/{}/".format(new_label)
         self.train.ckpt_saving_path = "checkpoint/{}/".format(new_label)
-        self.test.ckpt_loading_path = "checkpoint/{}/".format(label)
+        self.test.ckpt_loading_path = "checkpoint/{}/".format(new_label)
         return new_label       
 
     def show_basic_paras(self):
         print('{:<30s}: {}'.format('label', self.label))
-        print('{:<30s}: {}'.format('n_num', self.n_num))
+        print('{:<30s}: {}'.format('n_ang', self.n_ang))
         print('{:<30s}: {}'.format('n_slices', self.n_slices))
 
     def show_train_paras(self):
@@ -177,14 +177,14 @@ class Config():
         print('{:<30s}: {}'.format('train.valid_saving_path', self.train.valid_saving_path))
         print('{:<30s}: {}'.format('train.ckpt_saving_path', self.train.ckpt_saving_path)) 
         print('{:<30s}: {}'.format('train.target3d_path', self.train.target3d_path)) 
-        print('{:<30s}: {}'.format('train.lf2d_path', self.train.lf2d_path)) 
+        print('{:<30s}: {}'.format('train.lf3d_path', self.train.lf3d_path)) 
         print('{:<30s}:'.format('dataset_preload'), self.dataset_preload)  
         print('{:<30s}:'.format('train.device'), self.train.device)  
     
     def show_test_paras(self):
         print('{:<30s}: {}'.format('test.ckpt_loading_path', self.test.ckpt_loading_path)) 
         print('{:<30s}:'.format('test.img_size'), self.test.img_size)
-        print('{:<30s}: {}'.format('test.lf2d_path', self.test.lf2d_path)) 
+        print('{:<30s}: {}'.format('test.lf3d_path', self.test.lf3d_path)) 
         print('{:<30s}: {}'.format('test.saving_path', self.test.saving_path)) 
         print('{:<30s}:'.format('train.device'), self.train.device)          
        
