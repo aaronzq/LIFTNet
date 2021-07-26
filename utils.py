@@ -205,9 +205,9 @@ if __name__ == '__main__':
 
     # save_img2d_('LF_save.tif', './data/', img2d, bitdepth=8)
 
-    config = Config(label = 'rbcDSRED_[m76-76]_step2um_N11_bgsub_20210112')
+    # config = Config(label = 'rbcDSRED_[m76-76]_step2um_N11_bgsub_20210112')
 
-    exists_or_mkdir('data/test/')
+    # exists_or_mkdir('data/test/')
 
-    a=1
+    # a=1
 
