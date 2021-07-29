@@ -1,9 +1,7 @@
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
 
 from model import UNet
-from dataset import vcdDataset
 from utils import *
 from os import listdir
 from os.path import splitext
@@ -23,7 +21,7 @@ def read_test_imgs(
 
     assert len(img_list) > 0, "no image is loaded from the target directory" 
 
-    imgs = np.zeros([len(img_list), img_size[0], img_size[1], n_ang])
+    imgs = np.zeros([len(img_list), n_ang, img_size[0], img_size[1]])
     for idx, img_name in enumerate(img_list):
         img = get_img3d_fn(img_name, path, normalize_fn=normalize_1)
         imgs[idx, :, :, :] = img
@@ -75,7 +73,9 @@ def test(config, epoch, batch_size=1):
 if __name__ == "__main__":
     config = Config(label = 'simulated_beads_25_21', n_ang=25, n_slices=21)    
     config.test.img_size = [256, 256]
+    config.test.lf3d_path = 'data/test/'
+    config.test.saving_path = 'data/test/{}/'.format(config.label)
+
     config.show_basic_paras()
     config.show_test_paras()
-    # read_test_imgs('./data/lftest/LF/', [176,176], n_num=11, fmt='.tif')
     test(config, epoch=20, batch_size=1)
