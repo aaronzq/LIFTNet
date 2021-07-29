@@ -100,7 +100,7 @@ def train(config, begin_epoch=0):
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss_train': losses_train[-1],
                 'loss_val': losses_val[-1]
-                }, config.train.ckpt_saving_path + '{}_vcdnet_epoch{}.pth'.format(config.label, epoch))
+                }, config.train.ckpt_saving_path + '{}_liftnet_epoch{}.pth'.format(config.label, epoch))
                 # todo the saved file seems to be too big
         
         print(", learning rate:%.6f" % (optimizer.param_groups[0]["lr"]), end='\n')
