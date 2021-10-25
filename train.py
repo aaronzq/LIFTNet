@@ -100,7 +100,7 @@ def train(config, begin_epoch=0):
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss_train': losses_train[-1],
                 'loss_val': losses_val[-1]
-                }, config.train.ckpt_saving_path + '{}_liftnet_epoch{}.pth'.format(config.label, epoch))
+                }, config.train.ckpt_saving_path + '{}_vcdnet_epoch{}.pth'.format(config.label, epoch))
                 # todo the saved file seems to be too big
         
         print(", learning rate:%.6f" % (optimizer.param_groups[0]["lr"]), end='\n')
@@ -109,15 +109,17 @@ def train(config, begin_epoch=0):
 
 if __name__ == '__main__':
 
-    config = Config(label = 'simulated_beads_25_21', n_ang=25, n_slices=21)
-    config.train.target3d_path = 'data/train/gt/'
-    config.train.lf3d_path = 'data/train/lf/'
-    config.train.n_epoch = 50
-    config.train.ckpt_saving_interval = 2
-    config.train.decay_every = 40
-    config.train.n_val = 2
+    config = Config(label = 'fluo_beads_10212021_25_1', n_ang=25, n_slices=1)
+    config.train.target3d_path = '../dataGen/light_sheet_lift/fluobeads10212021/Dataset/WF/'
+    config.train.lf3d_path = '../dataGen/light_sheet_lift/fluobeads10212021/Dataset/LIFT/'
+    config.train.n_epoch = 100
+    config.train.ckpt_saving_interval = 10
+    config.train.decay_every = 30
+    config.train.n_val = 5
     config.train.batch_size = 1
     config.train.lr_init = 1e-4
+    config.train.img_size = [196, 196]
+    config.dataset_preload = True
     config.show_basic_paras()
     config.show_train_paras()
     train(config, begin_epoch=0)

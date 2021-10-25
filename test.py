@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 
 from model import UNet
 from utils import *
@@ -43,7 +44,7 @@ def test(config, epoch, batch_size=1):
     net = UNet(config.n_slices , config.n_ang).to(device)
 
     ckpt_list = listdir(config.test.ckpt_loading_path)
-    ckpt_name = '{}_liftnet_epoch{}.pth'.format(config.label, epoch)
+    ckpt_name = '{}_vcdnet_epoch{}.pth'.format(config.label, epoch)
     if ckpt_name in ckpt_list:
         ckpt = torch.load(config.test.ckpt_loading_path+ckpt_name, map_location=device)
         net.load_state_dict(ckpt['model_state_dict'])
@@ -53,7 +54,7 @@ def test(config, epoch, batch_size=1):
         raise Exception('No such checkpoint file')
     
 
-    test_imgs = read_test_imgs(config.test.lf2d_path, config.test.img_size, config.n_ang)
+    test_imgs = read_test_imgs(config.test.lf3d_path, config.test.img_size, config.n_ang)
     test_imgs = torch.from_numpy(test_imgs).to(device, dtype=torch.float32)
 
     net.eval()
@@ -71,11 +72,10 @@ def test(config, epoch, batch_size=1):
 
 
 if __name__ == "__main__":
-    config = Config(label = 'simulated_beads_25_21', n_ang=25, n_slices=21)    
+    config = Config(label = 'simulated_beads[200]_jorge_system_16_21', n_ang=16, n_slices=21)    
     config.test.img_size = [256, 256]
-    config.test.lf3d_path = 'data/test/'
-    config.test.saving_path = 'data/test/{}/'.format(config.label)
-
     config.show_basic_paras()
     config.show_test_paras()
-    test(config, epoch=20, batch_size=1)
+    config.test.lf3d_path = '../dataGen/jorge_system_brain_slice2/lf/at_bg/'
+    config.test.saving_path = '../dataGen/jorge_system_brain_slice2/lf/at_bg/{}/'.format(config.label)
+    test(config, epoch=30, batch_size=1)

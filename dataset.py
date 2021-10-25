@@ -44,7 +44,9 @@ class liftDataset(Dataset):
             self.gts = np.zeros([len(self.gt_ids), self.n_slices, image_size[0], image_size[1]])
             for idx in range(len(self.lf_ids)):
                 lf = get_img3d_fn(self.lf_ids[idx]+self.fmt, self.lf_dir, normalize_fn=normalize_1)
-                gt = get_img3d_fn(self.gt_ids[idx]+self.fmt, self.gt_dir, normalize_fn=normalize_1)                
+                # gt = get_img3d_fn(self.gt_ids[idx]+self.fmt, self.gt_dir, normalize_fn=normalize_1)
+                gt = get_img2d_fn(self.gt_ids[idx]+self.fmt, self.gt_dir, normalize_fn=normalize_1)
+
                 assert lf.shape == (self.n_ang, *self.image_size) , "Lift images size wrong"
                 assert gt.shape == (self.n_slices, *self.image_size) , "Ground truth 3D images size wrong"
                 self.lfs[idx, :, :, :] = lf

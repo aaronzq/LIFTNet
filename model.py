@@ -180,6 +180,89 @@ class UNet(nn.Module):
 
         return x
    
+        
+
+class VCDNet(nn.Module):
+    def __init__(self, n_num, n_slices, image_size):
+        super().__init__()
+        self.n_num = n_num
+        self.n_slices = n_slices
+        self.init_channel_num = n_num * n_num
+        self.image_size = image_size
+
+
+        self.use_bn = False
+        self.use_maxpool = False
+        self.use_upsample = False
+        self.use_dropout = False
+        # self.n_interp = 4
+        self.channels_interp = 128
+
+        self.channels_encoder = [128, 256, 512, 512, 512]
+ 
+        # self.interplayers_begin = InterpLayers(self.init_channel_num, self.n_interp, mode='upconv', use_bn=self.use_bn)
+
+        self.interplayers_begin = UpConv2d(self.init_channel_num, self.channels_interp, mode='bilinear')
+
+        self.encoderblock1 = EncoderBlock(self.channels_interp, self.channels_encoder[0], use_act=False, use_bn=False, use_maxpool=self.use_maxpool)
+        self.encoderblock2 = EncoderBlock(self.channels_encoder[0], self.channels_encoder[1], use_act=True, use_bn=self.use_bn, use_maxpool=self.use_maxpool)
+        self.encoderblock3 = EncoderBlock(self.channels_encoder[1], self.channels_encoder[2], use_act=True, use_bn=self.use_bn, use_maxpool=self.use_maxpool)
+        self.encoderblock4 = EncoderBlock(self.channels_encoder[2], self.channels_encoder[3], use_act=True, use_bn=self.use_bn, use_maxpool=self.use_maxpool)
+        self.encoderblock5 = EncoderBlock(self.channels_encoder[3], self.channels_encoder[4], use_act=True, use_bn=False, use_maxpool=self.use_maxpool)
+
+        self.decoderblock1 = DecoderBlock(self.channels_encoder[4], self.channels_encoder[3], use_act=True, use_bn=self.use_bn, use_upsample=self.use_upsample, use_dropout=self.use_dropout)
+        self.decoderblock2 = DecoderBlock(self.channels_encoder[3]+self.channels_encoder[3], self.channels_encoder[2], use_act=True, use_bn=self.use_bn, use_upsample=self.use_upsample, use_dropout=self.use_dropout)
+        self.decoderblock3 = DecoderBlock(self.channels_encoder[2]+self.channels_encoder[2], self.channels_encoder[1], use_act=True, use_bn=self.use_bn, use_upsample=self.use_upsample, use_dropout=False)
+        self.decoderblock4 = DecoderBlock(self.channels_encoder[1]+self.channels_encoder[1], self.channels_encoder[0], use_act=True, use_bn=self.use_bn, use_upsample=self.use_upsample, use_dropout=False)
+        self.decoderblock5 = DecoderBlock(self.channels_encoder[0]+self.channels_encoder[0], self.n_slices, use_act=True, use_bn=False, use_upsample=self.use_upsample, use_dropout=False)
+        # self.interplayers_end = InterpLayers(self.n_slices, self.n_interp, mode='subpixel')
+        self.resize = nn.UpsamplingBilinear2d(size=self.image_size)
+        # self.conv_output = Conv2d_default(self.n_slices, self.n_slices, kernel_size=7)
+        # self.output_act = nn.Tanh()
+        # self.output_act = nn.ReLU()
+
+    def forward(self, x):
+        
+        # x = self.interplayers_begin(x)
+
+        x = self.interplayers_begin(x, output_size=self.image_size)
+ 
+        x1 = self.encoderblock1(x)
+
+        x2 = self.encoderblock2(x1)
+
+        x3 = self.encoderblock3(x2)
+
+        x4 = self.encoderblock4(x3)
+
+        x5 = self.encoderblock5(x4)
+        _, _, h, w = x4.size()
+        x = self.decoderblock1(x5, output_size=(h, w))
+
+        x = torch.cat([x4, x], dim=1)
+        _, _, h, w = x3.size()
+        x = self.decoderblock2(x, output_size=(h, w))
+
+        x = torch.cat([x3, x], dim=1)
+        _, _, h, w = x2.size()
+        x = self.decoderblock3(x, output_size=(h, w))
+
+        x = torch.cat([x2, x], dim=1)
+        _, _, h, w = x1.size()
+        x = self.decoderblock4(x, output_size=(h, w))
+
+        x = torch.cat([x1, x], dim=1)
+        x = self.decoderblock5(x)
+
+        # x = self.interplayers_end(x)
+
+        x = self.resize(x)
+        # x = self.conv_output(x)
+        # x = self.output_act(x)
+
+        return x
+
+
 
 if __name__ == "__main__":
 
@@ -199,3 +282,4 @@ if __name__ == "__main__":
             print(name, layer)
 
     print(outputc.size())
+    # make_dot(outputc).render("vcdnet", format="png")
