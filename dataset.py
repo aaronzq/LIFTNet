@@ -69,7 +69,8 @@ class liftDataset(Dataset):
         else:
 
             lf = get_img3d_fn(self.lf_ids[i]+self.fmt, self.lf_dir, normalize_fn=normalize_1)
-            gt = get_img3d_fn(self.gt_ids[i]+self.fmt, self.gt_dir, normalize_fn=normalize_1)            
+            # gt = get_img3d_fn(self.gt_ids[i]+self.fmt, self.gt_dir, normalize_fn=normalize_1) 
+            gt = get_img2d_fn(self.gt_ids[idx]+self.fmt, self.gt_dir, normalize_fn=normalize_1)           
             assert lf.shape == (self.n_ang, *self.image_size) , "Lift 3D images size wrong"
             assert gt.shape == (self.n_slices, *self.image_size) , "Ground truth 3D images size wrong"
             return {'lf': torch.from_numpy(lf).to(torch.float32), 'gt': torch.from_numpy(gt).to(torch.float32)}
