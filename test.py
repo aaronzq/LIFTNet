@@ -72,10 +72,10 @@ def test(config, epoch, batch_size=1):
 
 
 if __name__ == "__main__":
-    config = Config(label = 'simulated_beads[200]_jorge_system_16_21', n_ang=16, n_slices=21)    
-    config.test.img_size = [256, 256]
+    config = Config(label = 'fluo_beads_10212021_25_1', n_ang=25, n_slices=1)    
+    config.test.img_size = [196, 196]
     config.show_basic_paras()
     config.show_test_paras()
-    config.test.lf3d_path = '../dataGen/jorge_system_brain_slice2/lf/at_bg/'
-    config.test.saving_path = '../dataGen/jorge_system_brain_slice2/lf/at_bg/{}/'.format(config.label)
-    test(config, epoch=30, batch_size=1)
+    config.test.lf3d_path = '../dataGen/light_sheet_lift_10212021/Dataset-test/LIFT/'
+    config.test.saving_path = '../dataGen/light_sheet_lift_10212021/Dataset-test/LIFT/{}/'.format(config.label)
+    test(config, epoch=70, batch_size=1)
